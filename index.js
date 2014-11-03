@@ -4,11 +4,60 @@ var $__Object$create = Object.create;
 var $__Object$getPrototypeOf = Object.getPrototypeOf;
 var jsdom = require('jsdom').jsdom;
 var InputSim = require('input-sim').Input;
+var Promise = require('promise');
+var isFirstInFirstOut;
+
+function dispatchEvent(target, type) {
+  var document = target.ownerDocument;
+  var window = document.defaultView;
+  var Event = window.Event;
+
+  var event;
+
+  if (Event) {
+    event = new Event(type);
+  } else {
+    event = document.createEvent('UIEvents');
+  }
+
+  event.initEvent(type, true, true);
+
+  target.dispatchEvent(event);
+}
+
+function checkFirstInFirstOut() {
+  var input = jsdom('<input />').getElementsByTagName('input')[0];
+  var _isFirstInFirstOut = null;
+  var interval;
+  var firstIn = function(event) {
+    if(event._preventDefault) _isFirstInFirstOut = false;
+    event.preventDefault();
+  };
+  var secondIn = function (event) {
+    if(event._preventDefault) _isFirstInFirstOut = true;
+    event.preventDefault();
+  };
+  input.addEventListener('keypress', firstIn);
+  input.addEventListener('keypress', secondIn);
+
+  dispatchEvent(input, 'keypress');
+
+  return new Promise(function (resolve, reject) {
+    interval = setInterval(function() {
+      if(_isFirstInFirstOut !== null) {
+        clearInterval(interval);
+        input.removeEventListener('keypress', firstIn);
+        input.removeEventListener('keypress', secondIn);
+        resolve(_isFirstInFirstOut);
+      }
+    }, 100);
+  });
+}
 
 var InputSimBrowser = function($__super) {
   "use strict";
 
-  function InputSimBrowser(_options) {
+  function InputSimBrowser(_options, ready) {
     var options = {
       value: '',
       class: '',
@@ -23,11 +72,14 @@ var InputSimBrowser = function($__super) {
     };
 
     this.ops = options;
-
     this.makeInput();
-    this.addBrowser();
-
     $__Object$getPrototypeOf(InputSimBrowser.prototype).constructor.call(this, this.ops.value);
+
+    checkFirstInFirstOut().then( function(_isFirstInFirstOut) {
+      isFirstInFirstOut = _isFirstInFirstOut;
+      this.addBrowser();
+      ready();
+    }.bind(this));
   }
 
   InputSimBrowser.__proto__ = ($__super !== null ? $__super : Function.prototype);
@@ -77,9 +129,10 @@ var InputSimBrowser = function($__super) {
         this.augemntAddListener();
 
         this.input.addEventListener('keypress', function(event) {
-          console.log(event._preventDefault);
           if(!event._preventDefault) {
-            var action = this.handleEvent(event);
+            if(event.charCode === 0) {
+              var action = this.handleEvent(event);
+            }
             if(!action && event.charCode !== 0) {
               event.preventDefault();
               var charCode = event.charCode || event.keyCode;
@@ -110,25 +163,32 @@ var InputSimBrowser = function($__super) {
 
         var original_Input_addEventListener = HTMLInputElement.addEventListener,
             original_Input_removeEventListener = HTMLInputElement.removeEventListener,
+            nonTerminalListeners = [],
             terminalListeners = [];
 
         HTMLInputElement.addEventListener = function _Input_addEventListener(event, listener, useCapture, wantsUntrusted, terminal) {
           var $__arguments0 = arguments;
           var $__arguments = $__arguments0;
           if(terminal) {
-            console.log('terminal', event);
             terminalListeners.push($__arguments);
             original_Input_addEventListener.apply(this, [].slice.call($__arguments));
-          } else if(terminalListeners.length) {
-            console.log('nonterminal_1', event);
+
+            if(!isFirstInFirstOut && nonTerminalListeners.length) {
+              for(var i = 0; i < nonTerminalListeners.length; i++) {
+                var args = nonTerminalListeners[i];
+                HTMLInputElement.removeEventListener.apply(this, [].slice.call(args));
+                HTMLInputElement.addEventListener.apply(this, [].slice.call(args));
+              }
+            }
+          } else if(isFirstInFirstOut && terminalListeners.length) {
             // If it's not terminal but we have a listen that is we need to make sure
             // our terminal event listener fires last
             HTMLInputElement.removeEventListener.apply(this, [].slice.call(terminalListeners[0]));
             original_Input_addEventListener.apply(this, [].slice.call($__arguments));
             original_Input_addEventListener.apply(this, [].slice.call(terminalListeners[0]));
           } else {
-            console.log('nonterminal_2', event);
             // No terminals present, "Nothing To See Here, Move Along"
+            nonTerminalListeners.push($__arguments);
             original_Input_addEventListener.apply(this, [].slice.call($__arguments));
           }
         };
@@ -137,7 +197,6 @@ var InputSimBrowser = function($__super) {
           var $__arguments1 = arguments;
           var $__arguments = $__arguments1;
           if(terminal) {
-            console.log('terminal remove');
             for(var i = 0; i < terminalListeners.length; i++) {
               if($__arguments[0] === terminalListeners[i][0] && $__arguments[1] === terminalListeners[i][1]) {
                 terminalListeners.splice(i,1);
@@ -146,7 +205,12 @@ var InputSimBrowser = function($__super) {
             }
           } else {
             // Not terminal, "Nothing To See Here, Move Along"
-            original_Input_removeEventListener.apply(this, [].slice.call($__arguments));
+            for(var i = 0; i < nonTerminalListeners.length; i++) {
+              if($__arguments[0] === nonTerminalListeners[i][0] && $__arguments[1] === nonTerminalListeners[i][1]) {
+                nonTerminalListeners.splice(i,1);
+                return original_Input_removeEventListener.apply(this, [].slice.call($__arguments));
+              }
+            }
           }
         };
       },
