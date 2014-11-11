@@ -5,7 +5,10 @@ var $__Object$getPrototypeOf = Object.getPrototypeOf;
 var jsdom = require('jsdom').jsdom;
 var InputSim = require('input-sim').Input;
 var Promise = require('promise');
-var isFirstInFirstOut;
+var isFirstInFirstOut = false;
+
+var document = jsdom();
+var window = document.defaultView;
 
 function dispatchEvent(target, type) {
   var document = target.ownerDocument;
@@ -75,11 +78,13 @@ var InputSimBrowser = function($__super) {
     this.makeInput();
     $__Object$getPrototypeOf(InputSimBrowser.prototype).constructor.call(this, this.ops.value);
 
-    checkFirstInFirstOut().then( function(_isFirstInFirstOut) {
-      isFirstInFirstOut = _isFirstInFirstOut;
-      this.addBrowser();
-      ready();
-    }.bind(this));
+    if(ready) {
+      checkFirstInFirstOut().then( function(_isFirstInFirstOut) {
+        isFirstInFirstOut = _isFirstInFirstOut;
+        this.addBrowser();
+        ready();
+      }.bind(this));
+    }
   }
 
   InputSimBrowser.__proto__ = ($__super !== null ? $__super : Function.prototype);
