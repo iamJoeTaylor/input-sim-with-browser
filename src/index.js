@@ -103,6 +103,9 @@ class InputSimBrowser extends InputSim {
     };
 
     this.input = jsdom(`<input ${attrString} />`).getElementsByTagName('input')[0];
+    Object.defineProperty(this.input, 'inputSim', {
+      value: this
+    });
   }
 
   addBrowser() {

@@ -125,6 +125,9 @@
             };
 
             this.input = $$index$$jsdom("<input " + attrString + " />").getElementsByTagName('input')[0];
+            Object.defineProperty(this.input, 'inputSim', {
+              value: this
+            });
           },
 
           enumerable: false,
