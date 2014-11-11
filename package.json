@@ -1,6 +1,6 @@
 {
   "name": "input-sim-with-browser",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "input-sim with a wrapper to handle browser functionality",
   "main": "dist/index.js",
   "jsnext:main": "lib/index.js",
