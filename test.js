@@ -104,6 +104,15 @@ describe('handles keyboard events, like', function() {
       keyboard.dispatchEventsForAction('backspace', input.input);
       expect(input.text()).to.equal('No Fac');
     });
+    it('inputs at the end when nothing is there', function() {
+      input = new Input({});
+      keyboard.dispatchEventsForInput('a', input.input);
+      expect(input.text()).to.equal('a');
+      expect(input.selectedRange()).to.eql({
+        start: 1,
+        length: 0
+      });
+    });
   });
 });
 

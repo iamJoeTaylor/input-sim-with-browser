@@ -7,7 +7,7 @@
     var $$index$$jsdom = require('jsdom').jsdom;
     var $$index$$InputSim = require('input-sim').Input;
     var $$index$$Promise = require('promise');
-    var $$index$$isFirstInFirstOut = false;
+    var $$index$$isFirstInFirstOut;
 
     var $$index$$document = $$index$$jsdom();
     var $$index$$window = $$index$$document.defaultView;
@@ -86,6 +86,10 @@
             this.addBrowser();
             ready();
           }.bind(this));
+        } else {
+          // default to JSDOM
+          $$index$$isFirstInFirstOut = false;
+          this.addBrowser();
         }
       }
 

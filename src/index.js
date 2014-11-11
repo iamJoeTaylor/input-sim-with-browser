@@ -1,7 +1,7 @@
 var jsdom = require('jsdom').jsdom;
 var InputSim = require('input-sim').Input;
 var Promise = require('promise');
-var isFirstInFirstOut = false;
+var isFirstInFirstOut;
 
 var document = jsdom();
 var window = document.defaultView;
@@ -78,6 +78,10 @@ class InputSimBrowser extends InputSim {
         this.addBrowser();
         ready();
       });
+    } else {
+      // default to JSDOM
+      isFirstInFirstOut = false;
+      this.addBrowser();
     }
   }
 
