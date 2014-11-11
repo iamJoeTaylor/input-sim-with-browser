@@ -1,4 +1,4 @@
-var Input = require('./index.js');
+var Input = require('./dist/index.js');
 var Keysim = require('keysim');
 var keyboard = Keysim.Keyboard.US_ENGLISH;
 var chai = require('chai');
