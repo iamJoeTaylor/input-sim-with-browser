@@ -25,7 +25,8 @@
   "homepage": "https://github.com/iamJoeTaylor/input-sim-with-browser",
   "dependencies": {
     "input-sim": "^2.0.0",
-    "jsdom": "^1.1.0"
+    "jsdom": "^1.1.0",
+    "promise": "^6.0.1"
   },
   "devDependencies": {
     "chai": "^1.9.2",
